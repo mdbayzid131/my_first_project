@@ -33,3 +33,21 @@ def add_prouct(product:Product):
     return product
 
     
+
+@app.put("/product/{id}")
+def dpdate_product_by_id(id:int,product:Product):
+    for i in range(len(products)):
+        if products[i].id==id:
+            products[1]=product
+            return "Product Update Successfull"
+    return "No product Found"
+        
+            
+
+@app.delete("/product")
+def delete_product_by_id(id:int,):
+    for i in range(len(products)):
+        if products[i].id==id:
+            del products[i]
+            return "Product delete successfull"
+    return "Product not found"
