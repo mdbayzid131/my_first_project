@@ -9,7 +9,7 @@ def home():
 @app.get("/products")
 def get_all_product():
     return products
-
+ 
 
 
 products=[
