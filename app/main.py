@@ -1,5 +1,5 @@
-from fastapi import FastAPI, Depends, HTTPException, status
-from .models import Product as ProductModel
+from  fastapi import FastAPI, Depends, HTTPException, status
+from .models import Products as ProductModel
 from sqlalchemy.orm import Session
 from .database import engine, get_db
 from . import models, schemas
@@ -12,9 +12,9 @@ models.Base.metadata.create_all(bind=engine)
 
 
 
-@app.get("/products", response_model=list[schemas.Product])
+@app.get("/products", )
 def get_products(db: Session = Depends(get_db)):
-    products = db.query(ProductModel).all
+    products = db.query(ProductModel).all()
     return products
  
 
