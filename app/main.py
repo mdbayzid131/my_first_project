@@ -14,7 +14,7 @@ models.Base.metadata.create_all(bind=engine)
 
 @app.get("/products", response_model=list[schemas.Product])
 def get_products(db: Session = Depends(get_db)):
-    products = db.query(ProductModel).all()
+    products = db.query(ProductModel).all
     return products
  
 
