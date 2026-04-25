@@ -6,16 +6,16 @@ from sqlalchemy.orm import sessionmaker
 
 SQLALCHEMY_DATABASE_URL='postgresql://postgres:1234@localhost/my first project'
 engine=create_engine(SQLALCHEMY_DATABASE_URL)
-SeasonLocal=sessionmaker(autocommit=False,autoflush=False,bind=engine)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-Base= declarative_base()
+Base = declarative_base()
 
 
 def get_db():
-    db=SeasonLocal()
+    db = SessionLocal()
     try:
         yield db
-    finally:   
-            db.colse()
+    finally:
+        db.close()
 
         

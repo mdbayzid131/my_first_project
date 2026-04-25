@@ -1,84 +1,62 @@
-import psycopg2
+from fastapi import FastAPI, Depends, HTTPException, status
+from .models import Product as ProductModel
+from sqlalchemy.orm import Session
+from .database import engine, get_db
+from . import models, schemas
 
-from fastapi import FastAPI
-from app.models import Product
-import time
-from psycopg2.extras import RealDictCursor
+app = FastAPI()
 
+models.Base.metadata.create_all(bind=engine)
 
-
-
-
-app=FastAPI()
-
-while True:
-    try:
-        conn = psycopg2.connect(
-            host='localhost', 
-            database='my first project', 
-            user='postgres', 
-            password='1234',
-            cursor_factory=RealDictCursor
-        )
-        cursor = conn.cursor()
-        print("Database connection successful")
-        break
-    except Exception as error:
-        print('Database connection failed', error)
-        time.sleep(2)
     
 
 
 
-@app.get("/")
-def home():   
-    return "Welcome to FastApi"
-
-@app.get("/products")
-def get_all_product():
-    cursor.execute(""" SELECT * FROM product """)
-    data = cursor.fetchall()
-
-    return {'data': data}
+@app.get("/products", response_model=list[schemas.Product])
+def get_products(db: Session = Depends(get_db)):
+    products = db.query(ProductModel).all()
+    return products
  
 
 
-products=[
-    Product(id=1,name="shirt",description="new and premum",price=20.0,quantity=5),
-    Product(id= 2,name="pant",description="new and premum",price=20.0,quantity=5),
-    Product(id= 3,name="shoe",description="new and premum",price=20.0,quantity=5)
-]
-
-@app.get("/product/{id}")
-def get_product_by_id(id:int):
-    for product in products:
-        if product.id==id:
-            return product
-    return "Product not found"
-
-
-
-@app.post("/product")
-def add_product(product:Product):
-    products.append(product)
+@app.get("/product/{id}", response_model=schemas.Product)
+def get_product(id: int, db: Session = Depends(get_db)):
+    product = db.query(ProductModel).filter(ProductModel.id == id).first()
+    if not product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
     return product
 
+@app.post("/product", status_code=status.HTTP_201_CREATED, response_model=schemas.Product)
+def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)):
+    new_product = ProductModel(**product.model_dump())
+    db.add(new_product)
+    db.commit()
+    db.refresh(new_product)
+    return new_product
+
+@app.put("/product/{id}", response_model=schemas.Product)
+def update_product(id: int, updated_product: schemas.ProductCreate, db: Session = Depends(get_db)):
+    product_query = db.query(ProductModel).filter(ProductModel.id == id)
+    product = product_query.first()
     
+    if product == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+    
+    product_query.update(updated_product.model_dump(), synchronize_session=False)
+    db.commit()
+    return product_query.first()
 
-@app.put("/product/{id}")
-def update_product_by_id(id:int,product:Product):
-    for i in range(len(products)):
-        if products[i].id==id:
-            products[i]=product
-            return "Product Update Successful"
-    return "No product Found"
-        
-            
+@app.delete("/product/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_product(id: int, db: Session = Depends(get_db)):
+    product_query = db.query(ProductModel).filter(ProductModel.id == id)
+    product = product_query.first()
 
-@app.delete("/product")
-def delete_product_by_id(id:int,):
-    for i in range(len(products)):
-        if products[i].id==id:
-            del products[i]
-            return "Product delete successful"
-    return "Product not found"
+    if product == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+    
+    product_query.delete(synchronize_session=False)
+    db.commit()
+    return None
+
+
+
